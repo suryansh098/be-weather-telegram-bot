@@ -8,6 +8,7 @@ interface EnvironmentVariables {
   DATABASE_PASSWORD: string;
   DATABASE_NAME: string;
   WEATHER_API_KEY: string;
+  APP_URL: string;
 }
 
 export default EnvironmentVariables;

@@ -7,6 +7,7 @@ import { UserController } from './user/user.controller';
 import { UserService } from './user/user.service';
 import { TelegramService } from './telegram/telegram.service';
 import { AppService } from './app.service';
+import { TelegramController } from './telegram/telegram.controller';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { AppService } from './app.service';
     }),
     TypeOrmModule.forFeature([User]),
   ],
-  controllers: [AppController, UserController],
+  controllers: [AppController, UserController, TelegramController],
   providers: [AppService, TelegramService, UserService],
 })
 export class AppModule {}

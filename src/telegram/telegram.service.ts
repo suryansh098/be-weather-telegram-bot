@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 // import { TEST_USER_ID } from './telegram.constants';
 import * as TelegramBot from 'node-telegram-bot-api'; // works after installing types
 import { ConfigService } from '@nestjs/config';
@@ -12,7 +12,7 @@ import { UserService } from 'src/user/user.service';
  * Handles user subscriptions, city preferences, and sending daily weather updates.
  */
 @Injectable()
-export class TelegramService {
+export class TelegramService implements OnModuleInit {
   private readonly bot: TelegramBot; // Telegram bot instance
   private logger = new Logger(TelegramService.name); // Logger instance
 
@@ -29,31 +29,39 @@ export class TelegramService {
     const telegram_token = this.configService.get('TELEGRAM_TOKEN', {
       infer: true,
     });
-    this.bot = new TelegramBot(telegram_token, { polling: true });
 
-    // Bind methods to ensure correct 'this' context
+    // Initialize the bot with only basic configuration, webhook will be set later
+    this.bot = new TelegramBot(telegram_token, { webHook: true });
+
     this.handleReceiceMessage = this.handleReceiceMessage.bind(this);
     this.handleStart = this.handleStart.bind(this);
     this.handleSubscribe = this.handleSubscribe.bind(this);
     this.handleUnsubscribe = this.handleUnsubscribe.bind(this);
     this.handleSetCity = this.handleSetCity.bind(this);
 
-    this.logger.log(`Setting up event listeners for the bot...`);
+    this.logger.log('Setting up bot event listeners...');
 
-    // Set up bot event listeners
+    // Setup bot event listeners
     this.bot.on('message', this.handleReceiceMessage);
-    this.bot.on('polling_error', (error) => {
-      this.logger.error('Polling error occurred:', error.message);
-      // Handle the error as needed, e.g., retry or take corrective actions
-    });
-
     this.bot.onText(/\/start/, this.handleStart);
     this.bot.onText(/\/subscribe/, this.handleSubscribe);
     this.bot.onText(/\/unsubscribe/, this.handleUnsubscribe);
     this.bot.onText(/\/setcity (.+)/, this.handleSetCity);
 
-    // Set up the cron job for daily weather updates
+    // Setup the cron job to run daily at 8:00 AM
     this.setupCronJob();
+  }
+
+  async onModuleInit() {
+    const webhookUrl = `${this.configService.get('APP_URL')}/telegram-webhook`;
+
+    this.logger.log(`Setting webhook to ${webhookUrl}...`);
+    await this.bot.setWebHook(webhookUrl);
+  }
+
+  // Public method to process updates
+  public processUpdate(update: TelegramBot.Update) {
+    this.bot.processUpdate(update);
   }
 
   /**
@@ -213,7 +221,7 @@ export class TelegramService {
    */
   private setupCronJob() {
     // Set up the cron job to run daily at 8 AM
-    cron.schedule('0 8 * * *', async () => {
+    cron.schedule('* * * * *', async () => {
       this.logger.debug('Running daily weather update cron job...');
       await this.sendDailyWeatherUpdate();
     });
