@@ -1,7 +1,7 @@
 // user.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { User } from './user.entity';
 
 @Injectable()
@@ -39,5 +39,14 @@ export class UserService {
       await this.userRepository.save(user);
     }
     return user;
+  }
+
+  async getAllSubscribedUsersWithPreferredCity(): Promise<User[]> {
+    return this.userRepository.find({
+      where: {
+        isSubscribed: true,
+        preferredCity: Not(''),
+      },
+    });
   }
 }
