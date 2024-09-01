@@ -53,7 +53,7 @@ export class TelegramService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    const webhookUrl = `${this.configService.get('APP_URL')}/telegram-webhook`;
+    const webhookUrl = `${this.configService.get('APP_URL')}/telegram`;
 
     this.logger.log(`Setting webhook to ${webhookUrl}...`);
     await this.bot.setWebHook(webhookUrl);
